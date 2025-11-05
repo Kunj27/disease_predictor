@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Disease Predictor Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+        background: #f8fafc;
+        font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+        overflow-x: hidden;
+      }
+      .sidebar {
+        height: 100vh;
+        background: linear-gradient(180deg, #007bff, #00b4d8);
+        color: white;
+        position: fixed;
+        width: 240px;
+        top: 0;
+        left: 0;
+        padding-top: 2rem;
+        transition: all 0.3s ease;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      }
+      .sidebar h4 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-weight: 700;
+      }
+      .sidebar a {
+        display: block;
+        color: white;
+        text-decoration: none;
+        padding: 0.8rem 1.5rem;
+        margin: 0.3rem 1rem;
+        border-radius: 8px;
+        transition: 0.2s;
+        font-weight: 500;
+      }
+      .sidebar a:hover, .sidebar a.active {
+        background: rgba(255,255,255,0.2);
+      }
+      .content {
+        margin-left: 260px;
+        padding: 2rem;
+        transition: all 0.3s ease;
+      }
+      .card {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        background: white;
+      }
+      h2, h3, h4 {
+        font-weight: 700;
+        color: #0d0d0e;
+      }
+      label {
+        font-weight: 600;
+        color: #495057;
+      }
+      .form-select, .form-control {
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+      }
+      .btn-primary {
+        background: linear-gradient(90deg, #007bff, #00b4d8);
+        border: none;
+        border-radius: 10px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 600;
+        transition: 0.3s;
+      }
+      .btn-primary:hover {
+        transform: scale(1.05);
+      }
+      .btn-secondary {
+        border-radius: 10px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+      }
+      .result-text {
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      footer {
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin-top: 1.5rem;
+      }
+      .alert-info {
+        background: linear-gradient(90deg, #e3f2fd, #e0f7fa);
+        border: none;
+        color: #0d47a1;
+      }
+      #predict[disabled] {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      table {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      }
+      th {
+        background: #007bff;
+        color: white;
+      }
+      .metric-note {
+        font-size: 0.9rem;
+        color: #6c757d;
+      }
+      @media (max-width: 768px) {
+        .sidebar {
+          position: fixed;
+          height: auto;
+          width: 100%;
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          padding: 0.5rem 0;
+        }
+        .sidebar h4 { display: none; }
+        .sidebar a {
+          margin: 0;
+          padding: 0.5rem;
+          font-size: 0.9rem;
+        }
+        .content {
+          margin-left: 0;
+          padding-top: 4.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h4>🩺 HealthAI</h4>
+      <a href="#" class="active" id="nav-predictor">Disease Predictor</a>
+      <a href="#" id="nav-about">About</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Disease Predictor Page -->
+      <div id="page-predictor">
+        <div class="card p-4 fade-in">
+          <div class="card-body">
+            <div class="text-center mb-4">
+              <h2>🧬 Disease Predictor</h2>
+              <p class="text-muted mb-0">Enter patient details and predict the likelihood of disease</p>
+            </div>
+            <div class="mb-4">
+              <label for="disease" class="form-label">Select Disease</label>
+              <select id="disease" class="form-select">
+                <option value="" selected disabled>Choose disease</option>
+                {% for d in diseases %}
+                  <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <form id="form">
+              <div id="fields" class="row"></div>
+              <div class="mt-4 text-center">
+                <button type="button" id="predict" class="btn btn-primary shadow-sm" disabled>Predict</button>
+                <button type="button" id="reset" class="btn btn-secondary ms-2">Reset</button>
+              </div>
+            </form>
+            <div id="result" class="mt-4"></div>
+            <hr class="mt-4"/>
+            <footer>⚕️ Powered by Machine Learning — Smart Health Analysis</footer>
+          </div>
+        </div>
+      </div>
+
+      <!-- About Page -->
+      <div id="page-about" style="display:none;">
+        <div class="card p-4 mt-4">
+          <h3>About the Project</h3>
+          <p>This web application uses machine learning models trained on clinical datasets to predict disease probabilities from patient attributes.</p>
+      
+          <h4 class="mt-4">1️⃣ Heart Disease Prediction Model</h4>
+          <ul>
+            <li><strong>Dataset:</strong> <em>Framingham Heart Study</em> (processed CSV: <code>framingham .csv</code>). Typical features: age, sex, cholesterol, systolic blood pressure, smoking status, diabetes, BMI, etc.</li>
+            <li><strong>Model Pipeline:</strong> Scikit-learn <code>Pipeline</code> composed of <code>SimpleImputer</code> (median), <code>StandardScaler</code>, and <strong>Random Forest</strong>.</li>
+            <li><strong>Preprocessing:</strong> Missing-value imputation, numeric scaling, optional one-hot encoding for categorical flags.</li>
+          </ul>
+      
+          <h4 class="mt-3">2️⃣ Breast Cancer Prediction Model</h4>
+          <ul>
+            <li><strong>Dataset:</strong> Wisconsin Breast Cancer features file (<code>data.csv</code>), features include radius, texture, perimeter, area, smoothness, compactness, symmetry, fractal_dimension, etc.</li>
+            <li><strong>Model Pipeline:</strong> <code>Pipeline</code> combining <code>StandardScaler</code> and an ensemble classifier — <strong>Logistic Regression</strong>.</li>
+            <li><strong>Preprocessing:</strong> Drop non-feature columns, handle missing values, scale continuous features, optional PCA/feature selection.</li>
+          </ul>
+      
+          <h4 class="mt-3">3️⃣ Parkinson’s Disease Prediction Model</h4>
+          <ul>
+            <li><strong>Dataset:</strong> Parkinson’s vocal measurements (<code>parkinson_disease.csv</code>), features: fundamental frequency measures, jitter, shimmer, harmonic-to-noise ratio, MFCCs, etc.</li>
+            <li><strong>Model Pipeline:</strong> Pipeline with <code>StandardScaler</code> and classifier (XGBoost).</li>
+            <li><strong>Preprocessing:</strong> Scaling of acoustic features, optional feature aggregation, removal of correlated features.</li>
+          </ul>
+      
+          <h4 class="mt-4">📊 Model Performance (Test Split)</h4>
+          <div class="table-responsive">
+            <table class="table table-bordered text-center align-middle">
+              <thead>
+                <tr>
+                  <th>Disease Model</th>
+                  <th>Accuracy</th>
+                  <th>Precision</th>
+                  <th>Recall</th>
+                  <th>F1-Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Heart Disease (Random Forest)</td>
+                  <td>78.5%</td>
+                  <td>88.2%</td>
+                  <td>86.0%</td>
+                  <td>87.6%</td>
+                </tr>
+                <tr>
+                  <td>Breast Cancer (Logistic Regression)</td>
+                  <td>98.8%</td>
+                  <td>97.6%</td>
+                  <td>97.8%</td>
+                  <td>97.5%</td>
+                </tr>
+                <tr>
+                  <td>Parkinson’s Disease (XG-Boost)</td>
+                  <td>76.8%</td>
+                  <td>85.5%</td>
+                  <td>83.1%</td>
+                  <td>84.8%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    <script>
+      // Sidebar Navigation
+      const navLinks = document.querySelectorAll('.sidebar a');
+      const pages = {
+        predictor: document.getElementById('page-predictor'),
+        about: document.getElementById('page-about')
+      };
+
+      function showPage(pageId) {
+        Object.values(pages).forEach(p => p.style.display = 'none');
+        pages[pageId].style.display = 'block';
+        navLinks.forEach(a => a.classList.remove('active'));
+        document.getElementById('nav-' + pageId).classList.add('active');
+      }
+
+      document.getElementById('nav-predictor').addEventListener('click', () => showPage('predictor'));
+      document.getElementById('nav-about').addEventListener('click', () => showPage('about'));
+
+      // Safe ID function
+      function idSafe(s){ return s.replace(/[^a-zA-Z0-9]/g, "_"); }
+
+      // Dynamic feature loading
+      document.getElementById('disease').addEventListener('change', async function(){
+        const d = this.value;
+        document.getElementById('result').innerHTML='';
+        const res = await fetch('/features/'+encodeURIComponent(d));
+        const j = await res.json();
+        const container = document.getElementById('fields');
+        container.innerHTML = '';
+        if(j.error){
+          container.innerHTML = '<div class="text-danger">'+j.error+'</div>';
+          return;
+        }
+
+        const leftCol = document.createElement('div');
+        leftCol.className = 'col-md-6';
+        const rightCol = document.createElement('div');
+        rightCol.className = 'col-md-6';
+
+        let splitCount = 6;
+        if (d.toLowerCase().includes('heart')) splitCount = 7;
+
+        (j.features || []).forEach((f, i) => {
+          const div = document.createElement('div');
+          div.className = 'mb-3';
+          const label = document.createElement('label');
+          label.htmlFor = idSafe(f);
+          label.innerText = f;
+          const input = document.createElement('input');
+          input.className = 'form-control';
+          input.type = 'number';
+          input.step = 'any';
+          input.id = idSafe(f);
+          input.name = f;
+          input.placeholder = 'Enter value';
+          div.appendChild(label);
+          div.appendChild(input);
+          if(i < splitCount) leftCol.appendChild(div);
+          else rightCol.appendChild(div);
+        });
+
+        container.appendChild(leftCol);
+        container.appendChild(rightCol);
+        document.getElementById('predict').disabled = !j.model_loaded;
+        if(!j.model_loaded && j.load_error){
+          const warn = document.createElement('div');
+          warn.className = 'alert alert-warning mt-2';
+          warn.innerText = 'Model not loaded on server: ' + j.load_error;
+          container.appendChild(warn);
+        }
+      });
+
+      // Prediction logic with validation (unchanged)
+      document.getElementById('predict').addEventListener('click', async function(){
+        const disease = document.getElementById('disease').value;
+        const out = document.getElementById('result');
+        out.innerHTML = '';
+
+        if(!disease) {
+          out.innerHTML = '<div class="alert alert-warning text-center">⚠️ Please select a disease first.</div>';
+          return;
+        }
+
+        const inputs = {};
+        let emptyFields = [];
+        document.querySelectorAll('#fields input').forEach(inp => {
+          const val = inp.value.trim();
+          if(val === '') emptyFields.push(inp.name);
+          inputs[inp.name] = val === '' ? null : Number(val);
+        });
+
+        if (emptyFields.length > 0) {
+          out.innerHTML = `<div class="alert alert-warning text-center">⚠️ Please fill in all values before predicting.</div>`;
+          return;
+        }
+
+        this.disabled = true;
+        this.innerText = 'Predicting...';
+        try {
+          const res = await fetch('/predict', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({disease:disease, inputs:inputs})
+          });
+          const j = await res.json();
+          out.innerHTML = '';
+
+          if(j.error){
+            out.innerHTML = '<div class="alert alert-danger"><strong>Error:</strong> '+(j.error||'')+'</div>';
+          } else {
+            const hasDisease = j.prediction == 1;
+            const prob = j.probability ? (typeof j.probability === 'object'
+              ? (100 * (hasDisease ? j.probability["1"] || j.probability[1] || 0 : j.probability["0"] || j.probability[0] || 0)).toFixed(2)
+              : (100 * Number(j.probability)).toFixed(2))
+              : null;
+
+            let message = '';
+            if (hasDisease) {
+              message = `🩺 The patient <strong>has ${disease}</strong>`;
+              if (prob) message += ` with a probability of <strong>${prob}%</strong>.`;
+            } else {
+              message = `✅ The patient <strong>does not have ${disease}</strong>`;
+              if (prob) message += ` with a probability of <strong>${prob}%</strong>.`;
+            }
+
+            out.innerHTML = `<div class="alert alert-info result-text text-center">${message}</div>`;
+          }
+        } catch(err){
+          out.innerHTML = '<div class="alert alert-danger">Request failed: '+err+'</div>';
+        } finally {
+          this.disabled = false;
+          this.innerText = 'Predict';
+        }
+      });
+
+      document.getElementById('reset').addEventListener('click', function(){
+        document.getElementById('fields').innerHTML='';
+        document.getElementById('disease').selectedIndex = 0;
+        document.getElementById('predict').disabled = true;
+        document.getElementById('result').innerHTML='';
+      });
+    </script>
+  </body>
+</html>
